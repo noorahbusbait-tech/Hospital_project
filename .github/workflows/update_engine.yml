@@ -25,7 +25,7 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         # IMPORTANT: Ensure 'working_model.py' matches your actual filename
-        run: python your_script_name.py 
+        run: python working_model.py 
 
       - name: Commit and Push JSON outputs
         run: |
