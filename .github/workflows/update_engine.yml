@@ -1,0 +1,26 @@
+name: Hospital Engine Update
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # Runs every 10 minutes
+  workflow_dispatch:      # Allows you to click a button to run it manually
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Dependencies
+        run: pip install pymysql pandas  # Add any other libraries you use here
+
+      - name: Execute Script
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }} # This gives the script your password
+        run: python your_script_name.py # CHANGE THIS TO YOUR FILENAME
