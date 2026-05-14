@@ -1,13 +1,15 @@
-// --- 1. HANDLE LOGOUT ---
+// --- 1. HANDLE LOGOUT (Updated for Static GitHub Pages) ---
 function logout() {
     localStorage.clear();
-    window.location = "index.php";
+    // Redirecting to index.html because GitHub Pages cannot run index.php
+    window.location = "index.html"; 
 }
 
 // --- 2. DYNAMIC FETCH FROM MODEL OUTPUT ---
-fetch("outputs/finaloccupancy.json")
+// Updated path: GitHub Actions will save the JSON in the main folder, not /outputs/
+fetch("finaloccupancy.json") 
     .then(response => {
-        if (!response.ok) throw new Error("JSON not found");
+        if (!response.ok) throw new Error("JSON not found - Make sure GitHub Actions has run at least once.");
         return response.json();
     })
     .then(data => {
@@ -22,6 +24,7 @@ fetch("outputs/finaloccupancy.json")
         const riskBox = document.getElementById("patientPrediction");
         if (riskBox && data.hospital_shortage_risk) {
             const hRisk = data.hospital_shortage_risk;
+            // Updated to handle both "HIGH" and "CRITICAL" logic from your Python script
             const riskStyle = (hRisk === "CRITICAL" || hRisk === "HIGH") 
                 ? "color:#E74C3C; font-weight:bold;" 
                 : "color:#16A085;";
@@ -55,7 +58,7 @@ fetch("outputs/finaloccupancy.json")
             occupancyBox.innerHTML = tableHtml;
         }
 
-        // 🔹 C. First day value
+        // 🔹 C. First day value (The immediate forecast)
         if (data.forecast?.length > 0) {
             const first = Math.round(Number(data.forecast[0].total_occupancy) || 0);
             const predEl = document.getElementById("predOccupancy");
@@ -70,6 +73,7 @@ fetch("outputs/finaloccupancy.json")
             deptList.innerHTML = "";
             Object.keys(data.dept_predictions).forEach(dept => {
                 const stats = data.dept_predictions[dept];
+                // Convert "85.5%" string to a decimal (0.855) for logic
                 const occupancyRate = parseFloat(stats.occupancy_pct) / 100;
                 let color = occupancyRate >= 0.75 ? "#E74C3C" : (occupancyRate >= 0.50 ? "#F39C12" : "#2ECC71");
 
@@ -109,6 +113,7 @@ fetch("outputs/finaloccupancy.json")
                     const val = Math.round(parseFloat(deptData.beds)); 
                     const risk = deptData.risk;
 
+                    // Heatmap Color Logic
                     let bg = "#2ECC71"; let txt = "#fff";
                     if (risk === "HIGH" || risk === "CRITICAL") { bg = "#E74C3C"; }
                     else if (risk === "MEDIUM") { bg = "#F1C40F"; txt = "#000"; }
@@ -131,7 +136,11 @@ fetch("outputs/finaloccupancy.json")
             deptTimeline.innerHTML = html;
         }
     }) 
-    .catch(err => console.error("Error loading forecast data:", err)); 
+    .catch(err => {
+        console.error("Error loading forecast data:", err);
+        const occupancyBox = document.getElementById("occupancyResults");
+        if (occupancyBox) occupancyBox.innerHTML = "<p style='color:red;'>Forecasting data is currently being updated. Please check back in a few minutes.</p>";
+    }); 
 
 // --- 3. SCROLL FUNCTIONS ---
 function scrollToTop() {
