@@ -2,25 +2,26 @@ name: Hospital Engine Update
 
 on:
   schedule:
-    - cron: '*/10 * * * *' # Runs every 10 minutes
-  workflow_dispatch:      # Allows you to click a button to run it manually
+    - cron: '*/30 * * * *' # Runs every 30 mins
+  workflow_dispatch: # Allows you to run it manually for testing
 
 jobs:
-  run-script:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Updated from v3
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # Updated from v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Install Dependencies
-        run: pip install pymysql pandas  # Add any other libraries you use here
+        run: |
+          pip install pandas xgboost sqlalchemy mysql-connector-python matplotlib sklearn
 
-      - name: Execute Script
+      - name: Run Prediction Engine
         env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }} # This gives the script your password
-        run: python your_script_name.py # CHANGE THIS TO YOUR FILENAME
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: python your_script_name.py # Change this to your actual filename
