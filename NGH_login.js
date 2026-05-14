@@ -4,7 +4,7 @@ function doLogin() {
 
     if (u === "admin" && p === "1234") {
         localStorage.setItem("NGH_AUTH", "true");
-        window.location.href = "./NGH_dashboard.html";
+        window.location.href = "./index.html";
     } else {
         document.getElementById("loginError").textContent =
             "Invalid credentials. Please try again.";
