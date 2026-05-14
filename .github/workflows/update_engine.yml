@@ -24,7 +24,7 @@ jobs:
       - name: Run Prediction Engine
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        # IMPORTANT: Ensure 'your_script_name.py' matches your actual filename
+        # IMPORTANT: Ensure 'working_model.py' matches your actual filename
         run: python your_script_name.py 
 
       - name: Commit and Push JSON outputs
