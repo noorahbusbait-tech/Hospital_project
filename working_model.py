@@ -117,49 +117,12 @@ def run_pipeline():
         print(f"Model Error: {e}")
         occ_preds, mae_val = [15, 24, 29, 33, 34, 34, 32], 0.3590
         new_admissions = [15, 14, 12, 13, 11, 10, 9]
+        
+# --- PART 2: PHP PAGES READ DIRECTLY FROM DATABASE ---
+# No additional JSON files are generated here.
+# Dashboard and patient pages query the MySQL database directly.
 
-    # --- PART 2: REPLACING PHP LOGIC (Database Exports) ---
-    with engine.connect() as conn:
-        # 1. Replacement for dashboard_data.php
-        res = conn.execute(text("SELECT COUNT(*) as occupied FROM patients WHERE status='Admitted'")).fetchone()
-        occupied_count = int(res[0])
-        dashboard_json = {
-            "totalBeds": 80,
-            "occupied": occupied_count,
-            "available": max(0, 80 - occupied_count),
-            "rate": round((occupied_count / 80) * 100) if 80 > 0 else 0
-        }
-        with open(os.path.join(output_dir, "dashboard_data.json"), "w") as f:
-            json.dump(dashboard_json, f)
-
-        # 2. Replacement for get_admitted_patients.php
-        patients_df = pd.read_sql("SELECT mrn, patient_name, department FROM patients WHERE status='Admitted' ORDER BY patient_name ASC", conn)
-        patients_df.to_json(os.path.join(output_dir, "admitted_patients.json"), orient="records")
-
-        # 3. Replacement for get_departments.php
-        depts_df = pd.read_sql("SELECT * FROM departments ORDER BY department_name ASC", conn)
-        dept_list = []
-        for _, row in depts_df.iterrows():
-            total = int(row['total_beds'])
-            occ = int(row['current_occupancy'])
-            pct = (occ / total * 100) if total > 0 else 0
-            status = "LOW"
-            if pct >= 90: status = "CRITICAL"
-            elif pct >= int(row['threshold_percent']): status = "HIGH"
-            elif pct >= 50: status = "MODERATE"
-            
-            dept_list.append({
-                "department": row['department_name'],
-                "total": total,
-                "occupied": occ,
-                "available": max(0, total - occ),
-                "occupancy": round(pct),
-                "status": status
-            })
-        with open(os.path.join(output_dir, "departments.json"), "w") as f:
-            json.dump(dept_list, f)
-
-    # --- PART 3: GENERATING CHARTS & FORECAST JSON ---
+# --- PART 3: GENERATE finaloccupancy.json AND CHART IMAGES ---
     df_depts = pd.read_sql("SELECT department_name, total_beds, current_occupancy FROM departments", engine)
     total_now = df_depts['current_occupancy'].sum()
     df_depts['weight'] = df_depts['current_occupancy'] / total_now if total_now > 0 else 1.0 / len(df_depts)
