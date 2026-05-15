@@ -1,35 +1,21 @@
-name: Hospital Engine Update
+name: Run Forecast Model
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # Runs every 30 mins
-  workflow_dispatch: # Allows you to run it manually for testing
+    - cron: "*/10 * * * *"   # every 10 minutes
+  workflow_dispatch:
 
 jobs:
-  build:
+  run-model:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.11"
 
-      - name: Install Dependencies
-        run: |
-          pip install pandas xgboost sqlalchemy mysql-connector-python matplotlib scikit-learn
+      - run: pip install -r requirements.txt
 
-      - name: Run Prediction Engine
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        # IMPORTANT: Ensure 'working_model.py' matches your actual filename
-        run: python working_model.py 
-
-      - name: Commit and Push JSON outputs
-        run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
-          git add *.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update hospital data [skip ci]" && git push)
+      - run: python python_model/working_model.py
