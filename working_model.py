@@ -23,14 +23,55 @@ base_path = os.path.dirname(os.path.abspath(__file__))
 output_dir = base_path 
 csv_path = os.path.join(base_path, 'cleandata.csv')
 
+import urllib.parse
+
+def create_db_engine():
+    # Read credentials from GitHub Secrets
+    db_host = os.environ.get("DB_HOST")       # e.g. sql123.infinityfree.com
+    db_port = os.environ.get("DB_PORT", "3306")
+    db_name = os.environ.get("DB_NAME")       # e.g. epiz_12345678_hospitaldb
+    db_user = os.environ.get("DB_USER")       # e.g. epiz_12345678
+    db_pass = os.environ.get("DB_PASSWORD")
+
+    # Validate required secrets
+    required = {
+        "DB_HOST": db_host,
+        "DB_NAME": db_name,
+        "DB_USER": db_user,
+        "DB_PASSWORD": db_pass,
+    }
+
+    missing = [k for k, v in required.items() if not v]
+    if missing:
+        raise ValueError(
+            f"Missing GitHub Secrets: {', '.join(missing)}"
+        )
+
+    # Encode password in case it contains special characters
+    encoded_password = urllib.parse.quote_plus(db_pass)
+
+    # Build SQLAlchemy connection string
+    connection_string = (
+        f"mysql+mysqlconnector://"
+        f"{db_user}:{encoded_password}"
+        f"@{db_host}:{db_port}/{db_name}"
+    )
+
+    # Create and return the engine
+    return create_engine(
+        connection_string,
+        pool_pre_ping=True,
+        pool_recycle=300
+    )
+
+
 def run_pipeline():
     # --- DATABASE CONNECTION ---
-    db_pass = os.environ.get('DB_PASSWORD')
-    db_host = "mysql-256d25f0-noorah-d305.h.aivencloud.com" # ⚠️ PASTE YOUR HOST HERE
-    db_user = "noorah_admin"
-    db_port = "12162"
-    
-    engine = create_engine(f"mysql+mysqlconnector://{db_user}:{db_pass}@{db_host}:{db_port}/defaultdb")
+    engine = create_db_engine()
+
+    # Test the connection
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
     
     # --- PART 1: ML MODELING (Your Original Logic) ---
     try:
@@ -162,3 +203,4 @@ if __name__ == "__main__":
         print(f"Charts and JSON updated at {time.strftime('%H:%M:%S')} | MAE: {mae}")
     except Exception as e:
         print(f"Error occurred: {e}")
+        raise
